@@ -3,6 +3,8 @@ services:
     build: ./user-service
     ports:
       - "8081:8081"
+    volumes:
+      -  ./user-service/storage:/app/storage
   gateway:
     image: nginx:latest
     ports:

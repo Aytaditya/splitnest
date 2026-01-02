@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	"github.com/Aytaditya/splitnest-user-service/internal/config"
+	handlers "github.com/Aytaditya/splitnest-user-service/internal/http"
+	"github.com/Aytaditya/splitnest-user-service/internal/storage"
 )
 
 func main() {
@@ -16,12 +18,16 @@ func main() {
 	//fmt.Println("Loaded config:", cfg)
 
 	// here wwe will connect db
+	storage, err2 := storage.ConnectDB(cfg)
+	if err2 != nil {
+		panic(err2)
+	}
 	// here we will start the server
 	router := http.NewServeMux()
 	// we will add routes here
-	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User Service is up and running"))
-	})
+	router.HandleFunc("GET /", handlers.Healthy())
+	router.HandleFunc("POST /register", handlers.Signup(storage))
+
 	fmt.Println("Server is running on port 8081")
 	err := http.ListenAndServe(cfg.HttpServer.Address, router)
 	if err != nil {
