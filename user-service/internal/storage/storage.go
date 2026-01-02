@@ -55,9 +55,47 @@ func (s *Sqlite) RegisterUser(username, email, password string) (int64, string, 
 	if err3 != nil {
 		return 0, "", err3
 	}
-	token, err4 := middleware.CreateToken(id, email)
+	token, err4 := middleware.CreateToken(id, username, email)
 	if err4 != nil {
 		return 0, "", err4
 	}
 	return id, token, nil
+}
+
+func (s *Sqlite) LoginUser(username, password string) (int64, string, string, error) {
+	if username == "" || password == "" {
+		return 0, "", "", fmt.Errorf("username and password cannot be nil")
+	}
+	// fetch user from db
+	row := s.DB.QueryRow(`SELECT id, email, password FROM users WHERE username=?`, username)
+	var id int64
+	var email string
+	var hashedPassword string
+	err := row.Scan(&id, &email, &hashedPassword)
+	if err != nil {
+		return 0, "", "", fmt.Errorf("invalid username or password")
+	}
+	err1 := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err1 != nil {
+		return 0, "", "", fmt.Errorf("invalid username or password")
+	}
+	token, err2 := middleware.CreateToken(id, username, email)
+	if err2 != nil {
+		return 0, "", "", err2
+	}
+	return id, email, token, nil
+}
+
+func (s *Sqlite) FindUsername(username string) (int64, string, error) {
+	if username == "" {
+		return 0, "", fmt.Errorf("username cannot be nil")
+	}
+	row := s.DB.QueryRow(`SELECT id,email FROM users WHERE username=?`, username)
+	var id int64
+	var email string
+	err := row.Scan(&id, &email)
+	if err != nil {
+		return 0, "", fmt.Errorf("user not found")
+	}
+	return id, email, nil
 }

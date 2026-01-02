@@ -27,6 +27,8 @@ func main() {
 	// we will add routes here
 	router.HandleFunc("GET /", handlers.Healthy())
 	router.HandleFunc("POST /register", handlers.Signup(storage))
+	router.HandleFunc("POST /login", handlers.Login(storage))
+	router.HandleFunc("GET /find-user/{username}", handlers.GetUserByUsername(storage))
 
 	fmt.Println("Server is running on port 8081")
 	err := http.ListenAndServe(cfg.HttpServer.Address, router)
