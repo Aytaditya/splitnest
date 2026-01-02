@@ -12,4 +12,4 @@ RUN go mod tidy
 EXPOSE 8081
 
 
-CMD ["go", "run", "cmd/main.go"]
+CMD ["go", "run", "cmd/main.go", "--config", "config/local.yaml"]
