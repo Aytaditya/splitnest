@@ -5,6 +5,12 @@ services:
       - "8081:8081"
     volumes:
       -  ./user-service/storage:/app/storage
+  group-service:
+    build: ./group-service
+    ports: 
+      - "8082:8082"
+    volumes:
+      - ./group-service/storage:/app/storage
   gateway:
     image: nginx:latest
     ports:

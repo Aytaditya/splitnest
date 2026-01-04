@@ -2,14 +2,17 @@ FROM golang:1.24.4
 
 WORKDIR /app
 
-# Copy everything
+# Copy only dependency files first 
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy rest of the code
 COPY . .
 
-# Download deps
-RUN go mod tidy
+# Build once
+RUN go build -o app cmd/main.go
 
-# Expose service port
 EXPOSE 8081
 
-
-CMD ["go", "run", "cmd/main.go", "--config", "config/local.yaml"]
+# Run compiled binary
+CMD ["./app", "--config", "config/local.yaml"]
