@@ -1,4 +1,4 @@
-.PHONY: up down build logs 
+.PHONY: up down build logs run
 
 up:
 	docker compose up --build
@@ -11,4 +11,7 @@ build:
 
 logs:
 	docker compose logs -f
+
+run: 
+	docker compose up 
 
