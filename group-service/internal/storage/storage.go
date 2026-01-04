@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Aytaditya/splitnest-group-service/internal/config"
+	"github.com/Aytaditya/splitnest-group-service/internal/types"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -59,6 +60,16 @@ func (s *Sqlite) CreateGroup(name string, createdBy int64) (int64, error) {
 	if err3 != nil {
 		return 0, err3
 	}
+	// adding creator as member of group too
+	stsmt2, err4 := s.DB.Prepare(`INSERT INTO group_members (group_id,user_id) VALUES (?,?)`)
+	if err4 != nil {
+		return 0, err4
+	}
+	defer stsmt2.Close()
+	_, err5 := stsmt2.Exec(id, createdBy)
+	if err5 != nil {
+		return 0, err5
+	}
 	return id, nil
 }
 
@@ -94,4 +105,50 @@ func (s *Sqlite) AddMembers(groupId, requesterId, userId int64) error {
 	}
 
 	return nil
+}
+
+func (s *Sqlite) UserGroups(userId int64) ([]types.UserGroup, error) {
+	// queryrow returns 1 row, query returns multiple rows and we use query and query not exec when we want to fetch data
+	rows, err := s.DB.Query(`
+		SELECT g.id, g.name
+		FROM groups g
+		JOIN group_members gm ON g.id = gm.group_id
+		WHERE gm.user_id = ?
+	`, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var groups []types.UserGroup
+
+	for rows.Next() {
+		var g types.UserGroup
+		if err := rows.Scan(&g.GroupId, &g.Name); err != nil {
+			return nil, err
+		}
+		groups = append(groups, g)
+	}
+
+	return groups, nil
+}
+
+func (s *Sqlite) GroupMembers(groupId int64) ([]types.GroupMember, error) {
+
+	rows, err := s.DB.Query(`SELECT user_id FROM group_members where group_id=?`, groupId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var members []types.GroupMember
+
+	for rows.Next() {
+		var m types.GroupMember
+		err2 := rows.Scan(&m.UserId)
+		if err2 != nil {
+			return nil, err2
+		}
+		members = append(members, m)
+	}
+	return members, nil
 }

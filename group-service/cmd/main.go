@@ -22,6 +22,8 @@ func main() {
 	router.HandleFunc("GET /", handlers.Healthy())
 	router.HandleFunc("POST /create-group", handlers.CreateGroup(storage))
 	router.HandleFunc("POST /add-members/{groupId}", handlers.AddMembers(storage))
+	router.HandleFunc("GET /user-groups", handlers.UserGroups(storage)) // this returns all the groups of a user in which he is a admin or a member
+	router.HandleFunc("GET /group-members/{groupId}", handlers.GroupMembers(storage))
 
 	fmt.Println("Starting server on", cfg.HttpServer.Address)
 	err := http.ListenAndServe(cfg.HttpServer.Address, router)

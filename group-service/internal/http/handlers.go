@@ -97,3 +97,44 @@ func AddMembers(storage *storage.Sqlite) http.HandlerFunc {
 		response.WriteResponse(w, http.StatusOK, map[string]string{"message": "Member added successfully"})
 	}
 }
+
+func UserGroups(storage *storage.Sqlite) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		authHeader := r.Header.Get("Authorization")
+		userId, err := middleware.ValidateToken(authHeader)
+		if err != nil {
+			response.WriteResponse(w, http.StatusUnauthorized, map[string]string{
+				"error": "unauthorized",
+			})
+			return
+		}
+
+		groups, err := storage.UserGroups(userId)
+		if err != nil {
+			response.WriteResponse(w, http.StatusInternalServerError, map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		response.WriteResponse(w, http.StatusOK, groups)
+	}
+}
+
+func GroupMembers(storage *storage.Sqlite) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		groupId := r.PathValue("groupId")
+		groupId_int, err := strconv.ParseInt(groupId, 10, 64)
+		if err != nil {
+			response.WriteResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid group ID"})
+			return
+		}
+		members, err2 := storage.GroupMembers(groupId_int)
+		if err2 != nil {
+			response.WriteResponse(w, http.StatusInternalServerError, map[string]string{"error": err2.Error()})
+			return
+		}
+		response.WriteResponse(w, http.StatusOK, members)
+	}
+}
