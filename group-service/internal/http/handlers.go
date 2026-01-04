@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	call "github.com/Aytaditya/splitnest-group-service/internal/http/sync-call"
 	"github.com/Aytaditya/splitnest-group-service/internal/middleware"
@@ -72,6 +73,27 @@ func AddMembers(storage *storage.Sqlite) http.HandlerFunc {
 			return
 		}
 		fmt.Println("Fetched user ID:", id)
-		response.WriteResponse(w, http.StatusOK, map[string]string{"message": "AddMembers endpoint hit"})
+
+		groupdId := r.PathValue("groupId")
+		groupId_int, err3 := strconv.ParseInt(groupdId, 10, 64)
+		if err3 != nil {
+			response.WriteResponse(w, http.StatusBadRequest, map[string]string{"error": "Invalid group ID"})
+			return
+		}
+		fmt.Println("Group ID from path:", groupId_int)
+
+		// jwt token
+		requesterId, err4 := middleware.ValidateToken(r.Header.Get("Authorization"))
+		if err4 != nil {
+			response.WriteResponse(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+			return
+		}
+		err5 := storage.AddMembers(groupId_int, requesterId, id)
+		if err5 != nil {
+			response.WriteResponse(w, http.StatusInternalServerError, map[string]string{"error": err5.Error()})
+			return
+		}
+
+		response.WriteResponse(w, http.StatusOK, map[string]string{"message": "Member added successfully"})
 	}
 }

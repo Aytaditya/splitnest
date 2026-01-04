@@ -61,3 +61,37 @@ func (s *Sqlite) CreateGroup(name string, createdBy int64) (int64, error) {
 	}
 	return id, nil
 }
+
+func (s *Sqlite) AddMembers(groupId, requesterId, userId int64) error {
+	if groupId == 0 || userId == 0 || requesterId == 0 {
+		return fmt.Errorf("invalid group id or user id")
+	}
+	// now we will validate that the group is created by requester
+	stmt, err := s.DB.Prepare(`SELECT created_by FROM groups WHERE id = ?`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	row := stmt.QueryRow(groupId)
+	var createdBy int64
+	err3 := row.Scan(&createdBy)
+	if err3 != nil {
+		return err3
+	}
+
+	if createdBy != requesterId {
+		return fmt.Errorf("only group owner can add members")
+	}
+
+	stmt2, err4 := s.DB.Prepare(`INSERT INTO group_members (group_id,user_id) VALUES (?,?)`)
+	if err4 != nil {
+		return err4
+	}
+	defer stmt2.Close()
+	_, err5 := stmt2.Exec(groupId, userId)
+	if err5 != nil {
+		return err5
+	}
+
+	return nil
+}

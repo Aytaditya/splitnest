@@ -21,7 +21,7 @@ func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("GET /", handlers.Healthy())
 	router.HandleFunc("POST /create-group", handlers.CreateGroup(storage))
-	router.HandleFunc("POST /add-members", handlers.AddMembers(storage))
+	router.HandleFunc("POST /add-members/{groupId}", handlers.AddMembers(storage))
 
 	fmt.Println("Starting server on", cfg.HttpServer.Address)
 	err := http.ListenAndServe(cfg.HttpServer.Address, router)
