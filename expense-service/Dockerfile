@@ -12,7 +12,7 @@ COPY . .
 # Build once
 RUN go build -o app cmd/main.go
 
-EXPOSE 8082
+EXPOSE 8083
 
 # Run compiled binary
 CMD ["./app", "--config", "config/local.yaml"]
