@@ -19,6 +19,7 @@ func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("GET /", handlers.Healthy())
 	router.HandleFunc("POST /add-expense/{groupId}", handlers.AddExpense(storage))
+	router.HandleFunc("GET /get-expense/{groupId}", handlers.GetExpenses(storage))
 
 	fmt.Println("Starting Expense Service on port 8083")
 	err := http.ListenAndServe(cfg.HttpServer.Address, router)

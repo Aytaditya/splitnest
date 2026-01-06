@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Aytaditya/splitnest-expense-service/internal/config"
+	"github.com/Aytaditya/splitnest-expense-service/internal/types"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -92,9 +93,10 @@ func (s *Sqlite) UpdateBalance(groupId, userId, amount int64) {
 	if groupId <= 0 || userId <= 0 {
 		return
 	}
-	// check if entry exists
+	// getting old balance
 	var existingAmount int64
 	err := s.DB.QueryRow(`SELECT amount FROM balances WHERE group_id = ? AND user_id = ?`, groupId, userId).Scan(&existingAmount)
+
 	if err != nil {
 		// insert new entry
 		stmt, err2 := s.DB.Prepare(`INSERT INTO balances (group_id, user_id, amount) VALUES (?, ?, ?)`)
@@ -120,4 +122,24 @@ func (s *Sqlite) UpdateBalance(groupId, userId, amount int64) {
 		}
 	}
 	return
+}
+
+func (s *Sqlite) GetExpensesById(groupId int64) ([]types.BalanceUser, error) {
+	if groupId <= 0 {
+		return nil, fmt.Errorf("invalid group id")
+	}
+	rows, err := s.DB.Query(`SELECT user_id, amount from balances WHERE group_id=?`, groupId)
+	if err != nil {
+		return nil, err
+	}
+	var details []types.BalanceUser
+	for rows.Next() {
+		var detail types.BalanceUser
+		err2 := rows.Scan(&detail.UserId, &detail.Amount)
+		if err2 != nil {
+			return nil, err2
+		}
+		details = append(details, detail)
+	}
+	return details, nil
 }

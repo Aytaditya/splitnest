@@ -94,3 +94,20 @@ func AddExpense(storage *storage.Sqlite) http.HandlerFunc {
 		})
 	}
 }
+
+func GetExpenses(storage *storage.Sqlite) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		groupId := r.PathValue("groupId")
+		group_id, err := strconv.ParseInt(groupId, 10, 64)
+		if err != nil {
+			response.WriteResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid group id"})
+			return
+		}
+		details, err2 := storage.GetExpensesById(group_id)
+		if err2 != nil {
+			response.WriteResponse(w, http.StatusInternalServerError, map[string]string{"error": err2.Error()})
+			return
+		}
+		response.WriteResponse(w, http.StatusOK, details)
+	}
+}
