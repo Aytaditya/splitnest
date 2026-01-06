@@ -47,3 +47,7 @@ func ConnectDB(config *config.Config) (*Sqlite, error) {
 	fmt.Println("Connected to SQLite database successfully")
 	return &Sqlite{DB: db}, nil
 }
+
+func (s *Sqlite) ManageExpenses() error {
+	return nil
+}
