@@ -16,7 +16,7 @@ services:
     ports:
       - "8083:8083"
     volumes:
-      - ./ expense-service/storage:/app/storage
+      - ./expense-service/storage:/app/storage
   gateway:
     image: nginx:latest
     ports:
@@ -26,3 +26,4 @@ services:
     depends_on:
       - user-service
       - group-service
+      - expense-service

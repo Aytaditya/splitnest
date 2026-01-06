@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	call "github.com/Aytaditya/splitnest-expense-service/internal/http/sync-call"
 	"github.com/Aytaditya/splitnest-expense-service/internal/middleware"
@@ -29,7 +30,15 @@ func AddExpense(storage *storage.Sqlite) http.HandlerFunc {
 
 		// reading groupid from url
 		GroupId := r.PathValue("groupId")
-		fmt.Println("Group ID from URL:", GroupId)
+		groupId_int, err := strconv.ParseInt(GroupId, 10, 64)
+		if err != nil {
+			response.WriteResponse(w, http.StatusBadRequest, map[string]string{
+				"error": "invalid group id",
+			})
+			return
+		}
+
+		fmt.Println("Group ID from URL:", groupId_int)
 
 		// reading json body for amount
 		var details struct {
@@ -65,6 +74,23 @@ func AddExpense(storage *storage.Sqlite) http.HandlerFunc {
 		splitAmount := details.Amount / int64(len(userIds))
 		fmt.Println("Each member should pay:", splitAmount)
 
-		response.WriteResponse(w, http.StatusOK, map[string]string{"status": "Add Expense endpoint"})
+		expenseId, err5 := storage.CreateExpense(groupId_int, userId, details.Amount)
+		if err5 != nil {
+			response.WriteResponse(w, http.StatusInternalServerError, map[string]string{"error": err5.Error()})
+			return
+		}
+
+		for _, memberId := range userIds {
+			storage.CreateExpenseSplit(expenseId, memberId, splitAmount)
+			if memberId == userId {
+				storage.UpdateBalance(groupId_int, memberId, details.Amount-splitAmount)
+			} else {
+				storage.UpdateBalance(groupId_int, memberId, -splitAmount)
+			}
+		}
+
+		response.WriteResponse(w, http.StatusCreated, map[string]string{
+			"message": "expense added successfully",
+		})
 	}
 }
