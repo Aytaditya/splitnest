@@ -11,6 +11,12 @@ services:
       - "8082:8082"
     volumes:
       - ./group-service/storage:/app/storage
+  expense-service:
+    build: ./expense-service
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./ expense-service/storage:/app/storage
   gateway:
     image: nginx:latest
     ports:

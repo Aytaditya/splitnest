@@ -5,18 +5,22 @@ import (
 	"net/http"
 
 	"github.com/Aytaditya/splitnest-expense-service/internal/config"
+	"github.com/Aytaditya/splitnest-expense-service/internal/storage"
 )
 
 func main() {
-	config := config.MustLoad()
-	fmt.Println("Loaded config:", config)
-	// here we will connect to db
+	cfg := config.MustLoad()
+	fmt.Println("Loaded config:", cfg)
+	_, err2 := storage.ConnectDB(cfg)
+	if err2 != nil {
+		panic(err2)
+	}
 	router := http.NewServeMux()
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Expense Service is running"))
 	})
 	fmt.Println("Starting Expense Service on port 8083")
-	err := http.ListenAndServe(":8083", router)
+	err := http.ListenAndServe(cfg.HttpServer.Address, router)
 	if err != nil {
 		panic(err)
 	}
