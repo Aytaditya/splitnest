@@ -17,6 +17,33 @@ services:
       - "8083:8083"
     volumes:
       - ./expense-service/storage:/app/storage
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"     # AMQP (used by services)
+      - "15672:15672"   # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+  notification-service:
+    build: ./notification-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+  
   gateway:
     image: nginx:latest
     ports:
@@ -27,3 +54,6 @@ services:
       - user-service
       - group-service
       - expense-service
+
+volumes:
+  rabbitmq_data:

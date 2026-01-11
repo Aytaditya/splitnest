@@ -3,13 +3,16 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/Aytaditya/splitnest-expense-service/internal/events"
 	call "github.com/Aytaditya/splitnest-expense-service/internal/http/sync-call"
 	"github.com/Aytaditya/splitnest-expense-service/internal/middleware"
 	"github.com/Aytaditya/splitnest-expense-service/internal/response"
 	"github.com/Aytaditya/splitnest-expense-service/internal/storage"
+	"github.com/Aytaditya/splitnest-expense-service/internal/types"
 )
 
 func Healthy() http.HandlerFunc {
@@ -18,7 +21,7 @@ func Healthy() http.HandlerFunc {
 	}
 }
 
-func AddExpense(storage *storage.Sqlite) http.HandlerFunc {
+func AddExpense(storage *storage.Sqlite, publisher *events.Publisher) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// first we need to verify the jwt and get payerId and also check if he exists in the group
 		userId, err := middleware.ValidateToken(r.Header.Get("Authorization"))
@@ -87,6 +90,18 @@ func AddExpense(storage *storage.Sqlite) http.HandlerFunc {
 			} else {
 				storage.UpdateBalance(groupId_int, memberId, -splitAmount)
 			}
+		}
+
+		event := types.ExpenseCreatedEvent{
+			ExpenseID: expenseId,
+			GroupID:   groupId_int,
+			PaidBy:    userId,
+			Amount:    details.Amount,
+			Members:   userIds,
+		}
+		err = publisher.PublishExpenseCreated(event)
+		if err != nil {
+			log.Println("failed to publish expense.created event:", err)
 		}
 
 		response.WriteResponse(w, http.StatusCreated, map[string]string{
